@@ -1,6 +1,6 @@
 package com.example.uitutorials;
 
-import android.app.ListActivity;
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.ActionMode;
@@ -10,139 +10,146 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+import android.widget.Toast;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
-public class ActionBarTutorial extends ListActivity {
+public class ActionBarTutorial extends Activity {
 
-    private String[] data = {"One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine","Ten"};
+    //listView对象
+    ListView listView;
 
-    private SelectionAdapter mAdapter;
+    String[] data = {"One", "Two", "Three", "Four", "Five"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //指定view
         setContentView(R.layout.activity_contextualactionbar_tutorial);
 
-        mAdapter = new SelectionAdapter(this,
-                R.layout.activity_rowlist, R.id.textView1, data);
-        setListAdapter(mAdapter);
-        getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        //获得listView组件
+        listView = findViewById(R.id.listView);
 
-        getListView().setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+        //创建一个ArrayList对象，对象的内容是HashMap<String,String>
+        ArrayList<HashMap<String, String>> arrayList = new ArrayList<>();
 
-            private int nr = 0;
+        for (int i = 0; i < data.length; i++) {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("data", data[i]);
+            arrayList.add(hashMap);
+        }
 
-            @Override
-            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                // TODO Auto-generated method stub
-                return false;
-            }
+        //键名
+        String[] from = {"data"};
+        //item视图id
+        int[] to = {R.id.textView};
+        //创建SimpleAdapter对象
+        final MySimpleAdapter mySimpleAdapter =
+                new MySimpleAdapter(this,
+                        arrayList,
+                        R.layout.activity_rowlist,
+                        from,
+                        to);
+        //设置listView的适配器
+        listView.setAdapter(mySimpleAdapter);
 
-            @Override
-            public void onDestroyActionMode(ActionMode mode) {
-                // TODO Auto-generated method stub
-                mAdapter.clearSelection();
-            }
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        listView.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener(){
+            int n = 0;
+
 
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                // TODO Auto-generated method stub
-
-                nr = 0;
+                n = 0;
+                //创建菜单
                 MenuInflater inflater = getMenuInflater();
                 inflater.inflate(R.menu.contextual_menu, menu);
                 return true;
             }
 
             @Override
-            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                // TODO Auto-generated method stub
-                switch (item.getItemId()) {
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
 
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
                     case R.id.item_delete:
-                        nr = 0;
-                        mAdapter.clearSelection();
+                        Toast.makeText(getApplicationContext(), "删除成功",Toast.LENGTH_SHORT).show();
+                        n = 0;
+                        mySimpleAdapter.clearSelection();
+                        //退出
                         mode.finish();
                 }
-                return false;
+                return true;
+//                return false;
             }
 
             @Override
-            public void onItemCheckedStateChanged(ActionMode mode, int position,
-                                                  long id, boolean checked) {
-                // TODO Auto-generated method stub
+            public void onDestroyActionMode(ActionMode mode) {
+                mySimpleAdapter.clearSelection();
+            }
+
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+                Toast.makeText(getApplicationContext(), position+"",Toast.LENGTH_SHORT).show();
+                //更新选项背景颜色
                 if (checked) {
-                    nr++;
-                    mAdapter.setNewSelection(position, checked);
+                    n++;
+                    mySimpleAdapter.setNewSelection(position, true);
                 } else {
-                    nr--;
-                    mAdapter.removeSelection(position);
+                    n--;
+                    mySimpleAdapter.removeSelection(position);
                 }
-                mode.setTitle(nr + " selected");
+                mode.setTitle(n + " selected");
 
             }
         });
 
-        getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-
-            @Override
-            public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
-                                           int position, long arg3) {
-                // TODO Auto-generated method stub
-
-                getListView().setItemChecked(position, !mAdapter.isPositionChecked(position));
-                return false;
-            }
-        });
     }
+    private class MySimpleAdapter extends SimpleAdapter{
+        private HashMap<Integer, Boolean> mSelection = new HashMap<>();
 
-    private class SelectionAdapter extends ArrayAdapter<String> {
-
-        private HashMap<Integer, Boolean> mSelection = new HashMap<Integer, Boolean>();
-
-        public SelectionAdapter(Context context, int resource,
-                                int textViewResourceId, String[] objects) {
-            super(context, resource, textViewResourceId, objects);
+        MySimpleAdapter(Context context, List<HashMap<String, String>> data, int resource, String[] from, int[] to){
+            super(context, data, resource, from, to);
         }
 
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View v = super.getView(position, convertView, parent);
+            //更换Item背景颜色
+            v.setBackgroundColor(getResources().getColor(android.R.color.background_light, null));
+
+            if (mSelection.get(position) != null) {
+                v.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light, null));
+            }
+            return v;
+        }
+
+        //选中某个选项
         public void setNewSelection(int position, boolean value) {
             mSelection.put(position, value);
             notifyDataSetChanged();
         }
 
-        public boolean isPositionChecked(int position) {
-            Boolean result = mSelection.get(position);
-            return result == null ? false : result;
-        }
-
-        public Set<Integer> getCurrentCheckedPosition() {
-            return mSelection.keySet();
-        }
-
+        //取消某个选项
         public void removeSelection(int position) {
             mSelection.remove(position);
             notifyDataSetChanged();
         }
-
+        //取消所有选项
         public void clearSelection() {
-            mSelection = new HashMap<Integer, Boolean>();
+            mSelection = new HashMap<>();
             notifyDataSetChanged();
         }
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View v = super.getView(position, convertView, parent);//let the adapter handle setting up the row views
-            v.setBackgroundColor(getResources().getColor(android.R.color.background_light)); //default color
-
-            if (mSelection.get(position) != null) {
-                v.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light));// this is a selected position so make it red
-            }
-            return v;
-        }
     }
+
 }

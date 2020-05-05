@@ -1,6 +1,5 @@
 package com.example.uitutorials;
 
-import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
@@ -8,7 +7,9 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MenuTest extends Activity {
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MenuTest extends AppCompatActivity {
     TextView tv_test;
 
     @Override
